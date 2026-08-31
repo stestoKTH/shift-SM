@@ -67,29 +67,27 @@ def learn_SM_td(env, dataset, gamma=0.95, num_samples=int(1e6), alpha=0.1, k_shi
     for traj in dataset:
         for t in range(len(traj) - 1 - k_shift):
             s, a = traj[t]
-            s_next, a_next = traj[t + 1 + k_shift]
+            s_next, a_next = traj[t + 1]
+            s_plus, a_plus = traj[t + 1 + k_shift]
 
             # if not env.is_valid_transition(s, a)[0]:
             #     continue
             # if not env.is_valid_transition(s_next, a_next)[0]:
             #     continue
 
-            transitions.append((s, a, s_next, a_next))
+            transitions.append((s, a, s_next, a_next, s_plus, a_plus))
 
     # Perform TD-style updates: M(sa) ← γ M(s'a') + one-step transition
     for _ in range(num_samples):
-        s, a, s_next, a_next = random.choice(transitions)
+        s, a, s_next, a_next, s_plus, a_plus = random.choice(transitions)
 
         sa_idx = env.sa_index(s, a)
         next_sa_idx = env.sa_index(s_next, a_next)
+        plus_sa_idx = env.sa_index(s_plus, a_plus)
 
-        # M_flat[sa_idx] += gamma * M_flat[next_sa_idx] + np.eye(dim)[next_sa_idx]
-        M_flat[sa_idx] = (1 - alpha) * M_flat[sa_idx] + alpha * (np.eye(dim)[next_sa_idx] + gamma * M_flat[next_sa_idx])
+        M_flat[sa_idx] = (1 - alpha) * M_flat[sa_idx] + alpha * (np.eye(dim)[plus_sa_idx] + gamma * M_flat[next_sa_idx])
 
     return M_flat*(1-gamma)
-
-
-
 
 
 

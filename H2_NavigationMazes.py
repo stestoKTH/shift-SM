@@ -9,14 +9,14 @@ import matplotlib as mpl
 
 # %%       ENV + Sing. values
 
-exp_factor = 4 # 4 for U, 2 for Medium and Large
-# env = GridEnvironment('Medium-maze',horizontal_exp = exp_factor, vertical_exp = exp_factor)
+exp_factor = 2 # 4 for U, 2 for Medium and Large
+env = GridEnvironment('Medium-maze',horizontal_exp = exp_factor, vertical_exp = exp_factor)
 # env = GridEnvironment('Large-maze',horizontal_exp = exp_factor, vertical_exp = exp_factor)
-env = GridEnvironment('U-maze',horizontal_exp = exp_factor, vertical_exp = exp_factor)
+# env = GridEnvironment('U-maze',horizontal_exp = exp_factor, vertical_exp = exp_factor)
 pi = UnifRandomPolicy(env)
 horizon = 200
 occ_matrices = compute_occ_matrices_from_policy(env, horizon=horizon, pi=pi)
-gamma = 0.98 # 0.98 for U and Large, 0.95 for Medium
+gamma = 0.95 # 0.98 for U and Large, 0.95 for Medium
 numS = env.num_states
 numA = env.num_actions
 
@@ -35,7 +35,7 @@ for ind in range(len(k_arr)):
 
 ###############
 maze_crop = exp_factor-1
-goal = (3 + maze_crop, 12 + maze_crop) # medium (4,1), U (3,12), Large (11,11)
+goal = (4 + maze_crop, 1 + maze_crop) # medium (4,1), U (3,12), Large (11,11)
 goal_idx = env.state_to_idx[goal]
 
 M = np.zeros_like(occ_matrices[0])
@@ -146,21 +146,22 @@ plt.show()
 
 #%%     M exact experiment
 
-env = GridEnvironment('Cross-4', grid_size = [15,15], cross_len = 5)
-# env = GridEnvironment('Medium-maze',horizontal_exp = 2, vertical_exp = 2)
+# env = GridEnvironment('Cross-4', grid_size = [15,15], cross_len = 5)
+env = GridEnvironment('Medium-maze',horizontal_exp = 2, vertical_exp = 2)
 # env = GridEnvironment('Large-maze',horizontal_exp = 2, vertical_exp = 2)
 # env = GridEnvironment('U-maze',horizontal_exp = 4, vertical_exp = 4)
 
 unif_pi = UnifRandomPolicy(env)
-horizon = 300
+# horizon = 300
+horizon = 100
 numS = env.num_states
 numA = env.num_actions
 dim = numS*numA
 
 occ_matrices = compute_occ_matrices_from_policy(env, horizon=horizon, pi=unif_pi)
 
-gamma = 0.97 # 0.95 for 9x9, 0.97 for 15x15
-k_arr = [0, 2, 5, 10, 20]
+gamma = 0.95 # 0.95 for 9x9, 0.97 for 15x15
+k_arr = [0, 2, 4, 8, 16]
 
 N_pairs = 500
 N_r = env.num_states
@@ -234,19 +235,20 @@ plt.show()
 
 # %%          M TD experiment
 
-env = GridEnvironment('Medium-maze',horizontal_exp = 2, vertical_exp = 2)
-# env = GridEnvironment('Large-maze',horizontal_exp = 2, vertical_exp = 2)
+# env = GridEnvironment('Medium-maze',horizontal_exp = 2, vertical_exp = 2)
+env = GridEnvironment('Large-maze',horizontal_exp = 2, vertical_exp = 2)
 # env = GridEnvironment('U-maze',horizontal_exp = 4, vertical_exp = 4)
 unif_pi = UnifRandomPolicy(env)
 N_r = env.num_states
 N_pairs = 100
-gamma = 0.95
-horizon = 100
+gamma = 0.99
+horizon = 300
 
 k_arr = [0, 2, 4, 8, 16]
-dist_kr_learn_td = np.zeros([5,len(k_arr),N_r,N_pairs])
+num_rep = 5
+dist_kr_learn_td = np.zeros([num_rep,len(k_arr),N_r,N_pairs])
 
-for i_d in range(5):
+for i_d in range(num_rep):
     dataset = env.generate_dataset(unif_pi)
     for k_cnt in range(len(k_arr)):
         print(k_cnt)
@@ -280,8 +282,8 @@ for subplot_id in range(2):  # one plot per column
     ax = axs[subplot_id]
 
     for i, k in enumerate(k_arr):
-        acc_ensamble = np.zeros([5, numS])
-        for ell in range(5):
+        acc_ensamble = np.zeros([num_rep, numS])
+        for ell in range(num_rep):
             acc_ensamble[ell,:] = np.mean(dist_kr_learn_td[ell, i, :, :] <= acc_threshold[subplot_id], axis=1)
             
         accmean = np.mean(acc_ensamble, axis=0)
@@ -306,26 +308,27 @@ axs[1].text(0.02, 0.95, '(f)', transform=axs[1].transAxes, fontsize=26, va='top'
 plt.show()
 
 
-
 # %%        Sample complexity experiment
 
-env = GridEnvironment('Medium-maze',horizontal_exp = 2, vertical_exp = 2)
+# env = GridEnvironment('Medium-maze',horizontal_exp = 2, vertical_exp = 2)
 # env = GridEnvironment('Large-maze',horizontal_exp = 2, vertical_exp = 2)
-# env = GridEnvironment('U-maze',horizontal_exp = 4, vertical_exp = 4)
+env = GridEnvironment('U-maze',horizontal_exp = 4, vertical_exp = 4)
 
 unif_pi = UnifRandomPolicy(env)
-num_trajs = np.round(np.logspace(np.log10(1e0), np.log10(1e5), num=10)).astype(int)  
+num_steps = 10
+num_trajs = np.round(np.logspace(0.0, 4.0, num=num_steps)).astype(int)  
 N_s = len(num_trajs)
-rank = 40
+rank = 40 # 60 for L, 40 for M and U 
 dim = env.num_states*env.num_actions
 N_pairs = 100
-gamma = 0.95
+gamma = 0.98 # 0.95 for M, 0.98 for L and U
 horizon = 100
 k_arr = [0, 2, 4, 8, 16]
+num_rep = 5
 
-dist_ks_learn_td = np.zeros([5,len(k_arr),N_s,N_pairs])
+dist_ks_learn_td = np.zeros([num_rep,len(k_arr),N_s,N_pairs])
 
-for i_d in range(5):
+for i_d in range(num_rep):
     for data_cnt in range(N_s):
         print(data_cnt)
         dataset = env.generate_dataset(unif_pi, num_trajectories = num_trajs[data_cnt])
@@ -345,7 +348,7 @@ for i_d in range(5):
 plt.figure(figsize=(6, 4))
 mpl.rcParams['text.usetex'] = True
 plt.rcParams.update({'font.size': 24})
-xaxis = np.round(np.logspace(np.log10(1e0), np.log10(1e5), num=10)).astype(int)  
+xaxis = num_trajs
 k_arr = [1, 3, 5, 9, 17]
 
 acc_threshold = [0, 2]
@@ -359,8 +362,8 @@ for subplot_id in range(2):  # one plot per column
     ax = axs[subplot_id]
 
     for i, k in enumerate(k_arr):
-        acc_ensamble = np.zeros([5, 10])
-        for ell in range(5):
+        acc_ensamble = np.zeros([num_rep, num_steps])
+        for ell in range(num_rep):
             acc_ensamble[ell,:] = np.mean(dist_ks_learn_td[ell, i, :, :] <= acc_threshold[subplot_id], axis=1)
             
         accmean = np.mean(acc_ensamble, axis=0)
@@ -385,8 +388,6 @@ fig.tight_layout()
 axs[0].text(0.02, 0.95, '(g)', transform=axs[0].transAxes, fontsize=26, va='top')
 axs[1].text(0.02, 0.95, '(h)', transform=axs[1].transAxes, fontsize=26, va='top')
 plt.show()
-
-
 
 
 # %%    LEGEND

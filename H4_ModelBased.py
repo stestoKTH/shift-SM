@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 
 env = GridEnvironment('Medium-maze',horizontal_exp = 2, vertical_exp = 2)
 unif_pi = UnifRandomPolicy(env)
-num_trajs = np.round(np.logspace(np.log10(1e0), np.log10(1e5), num=10)).astype(int)  
+num_trajs = np.round(np.logspace(0.0, 4.0, num=10)).astype(int)  
 N_s = len(num_trajs)
 rank = 40
 dim = env.num_states*env.num_actions
@@ -34,7 +34,6 @@ for i_d in range(5):
                 init_state = env.reset()
                 policy_Mr = GreedySMPolicy(env, Mr, goal_state)
                 dist_ks_learn_td[i_d, k_cnt,data_cnt,cnt_pair] = env.test_policy_distance(policy_Mr, init_state, max_horizon = horizon)
-          
 
 dist_ks_learn_mb = np.zeros([5,len(k_arr),N_s,N_pairs])
 for i_d in range(5):
@@ -58,10 +57,8 @@ for i_d in range(5):
                 policy_Mr = GreedySMPolicy(env, Mr, goal_state)
                 dist_ks_learn_mb[i_d,k_cnt,data_cnt,cnt_pair] = env.test_policy_distance(policy_Mr, init_state, max_horizon = horizon)
 
-
-
 k_arr = [1, 3, 5, 9, 17]
-xaxis = np.round(np.logspace(np.log10(1e0), np.log10(1e5), num=10)).astype(int)  
+xaxis = num_trajs
 
 mpl.rcParams['text.usetex'] = True
 plt.rcParams.update({'font.size': 18})
